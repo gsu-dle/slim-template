@@ -14,7 +14,7 @@
   ],
   "require": {
     "php": "^8.1",
-    "gsu-dle/slim": "dev-main"
+    "gsu-dle/slim": "^1.0"
   },
   "require-dev": {
     "phpstan/phpstan": "^1.9",
