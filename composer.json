@@ -17,15 +17,12 @@
     "gsu-dle/slim": "^1.0"
   },
   "require-dev": {
-    "phpstan/phpstan": "^1.9",
     "phpstan/extension-installer": "^1.1",
-    "phpstan/phpstan-strict-rules": "^1.3",
-    "squizlabs/php_codesniffer": "^3.7",
-    "phpunit/phpunit": "^9.5",
-    "jangregor/phpstan-prophecy": "^1.0",
-    "phpspec/prophecy-phpunit": "^2.0",
+    "phpstan/phpstan": "^1.9",
     "phpstan/phpstan-phpunit": "^1.3",
-    "gsu-dle/slim": "^1.0"
+    "phpstan/phpstan-strict-rules": "^1.3",
+    "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "^3.7"
   },
   "config": {
     "allow-plugins": {
@@ -39,12 +36,12 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "GAState\\Web\\App\\Test\\": "tests/src/"
+      "GAState\\Web\\App\\": "tests/src/"
     }
   },
   "scripts": {
     "phpcs": [
-      "phpcs -p --colors --standard=PSR12 src public"
+      "phpcs -p --colors --standard=PSR12 src public tests/src"
     ],
     "phpstan": [
       "phpstan clear-result-cache",

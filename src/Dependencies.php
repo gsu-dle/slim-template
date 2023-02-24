@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace GAState\Web\App;
+namespace GAState\MySlimApp;
 
-use GAState\Web\App\App;
-use GAState\Web\Slim\App as GsuApp;
-use GAState\Web\Slim\Env as GsuEnv;
+use GAState\MySlimApp\App as MySlimApp;
+use GAState\Web\Slim\App  as SlimApp;
+use GAState\Web\Slim\Env  as SlimEnv;
 
 return (function () {
-    $slimDir = GsuEnv::getString(GsuEnv::SLIM_DIR);
+    $slimDir = SlimEnv::getString(SlimEnv::SLIM_DIR);
 
     /**
      * Default dependencies from Slim
@@ -24,7 +24,7 @@ return (function () {
      * @var array<string,mixed> $appDeps
      */
     $appDeps = [
-        GsuApp::class => \DI\get(App::class),
+        SlimApp::class => \DI\get(MySlimApp::class),
     ];
 
     return array_merge($slimDeps, $appDeps);
