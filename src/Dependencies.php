@@ -4,28 +4,50 @@ declare(strict_types=1);
 
 namespace GAState\MySlimApp;
 
-use GAState\MySlimApp\App as MySlimApp;
-use GAState\Web\Slim\App  as SlimApp;
-use GAState\Web\Slim\Env  as SlimEnv;
+use GAState\MySlimApp\App as App;
+use GAState\MySlimApp\Env as Env;
+use GAState\Web\Slim\App  as BaseApp;
+
+// use GAState\Web\Slim\Cache\AppCacheFactoryInterface as AppCacheFactory;
+// use GAState\Web\Slim\Cache\DBAppCacheFactory        as DBAppCacheFactory;
+// use GAState\Web\Slim\Log\DBLoggerFactory            as DBLoggerFactory;
+// use GAState\Web\Slim\Log\LoggerFactoryInterface     as LoggerFactory;
 
 return (function () {
-    $slimDir = SlimEnv::getString(SlimEnv::SLIM_DIR);
-
     /**
-     * Default dependencies from Slim
+     * Default dependencies
      *
-     * @var array<string,mixed> $slimDeps
+     * @var array<string,mixed> $defaultDeps
      */
-    $slimDeps = require("{$slimDir}/Dependencies.php");
+    $defaultDeps = require(Env::getString(Env::SLIM_DIR) . "/Dependencies.php");
 
     /**
-     * App dependencies / Slim overrides
+     * Environment variables
+     *
+     * @var array<string,mixed> $envVars
+     */
+    $envVars = [
+        // 'appCacheOptions' => [
+        //     'db_table' => 'AppCache'
+        // ],
+        // 'logTable' => 'AppLog',
+    ];
+
+    /**
+     * App dependencies
      *
      * @var array<string,mixed> $appDeps
      */
     $appDeps = [
-        SlimApp::class => \DI\get(MySlimApp::class),
+        BaseApp::class => \DI\autowire(App::class),
+
+        // AppCacheFactory::class => \DI\autowire(DBAppCacheFactory::class)
+        //     ->constructorParameter('options', \DI\get('appCacheOptions')),
+        // LoggerFactory::class => \DI\autowire(DBLoggerFactory::class)
+        //     ->constructorParameter('logName', \DI\get('logName'))
+        //     ->constructorParameter('logTable', \DI\get('logTable'))
+        //     ->constructorParameter('logLevel', \DI\get('logLevel')),
     ];
 
-    return array_merge($slimDeps, $appDeps);
+    return array_merge($defaultDeps, $envVars, $appDeps);
 })();
