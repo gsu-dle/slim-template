@@ -6,36 +6,86 @@ use DI\ContainerBuilder   as DIContainerBuilder;
 use GAState\MySlimApp\Env as Env;
 use GAState\Web\Slim\App  as BaseApp;
 
-require __DIR__ . '/../vendor/autoload.php';
+(function (mixed $baseDir, mixed $baseURI) {
+    $baseDir = realpath(is_string($baseDir) ? $baseDir : __DIR__ . '/../');
+    $baseURI = dirname(dirname($baseURI));
+    /** @var Throwable|null $exception */
+    $exception = null;
 
-ob_start();
+    register_shutdown_function(function () use (&$exception) {
+        if ($exception !== null) {
+            while (ob_get_level() > 0) {
+                if (!ob_end_clean()) {
+                    break;
+                }
+            }
 
-(function () {
-    Env::load(
-        strval(realpath(Env::getString(Env::BASE_DIR, __DIR__ . '/../'))),
-        Env::getString(Env::BASE_URI, dirname(dirname($_SERVER['SCRIPT_NAME'])))
-    );
+            header("Content-Type: text/plain");
+            echo "A fatal error has occurred. Please check the server for details.\n";
 
-    $containerBuilder = (new DIContainerBuilder())
-        ->useAttributes(true)
-        ->addDefinitions(Env::getString(Env::DI_DEF_FILE));
+            do {
+                echo sprintf(
+                    "[%s] %s: %s - %s\n",
+                    date('c'),
+                    get_class($exception),
+                    $exception->getMessage(),
+                    json_encode($exception->getTrace()),
+                );
+                $exception = $exception->getPrevious();
+            } while ($exception !== null);
+        }
+    });
 
-    if (Env::getBool(Env::DI_ENABLE_CMPL)) {
-        $containerBuilder = $containerBuilder
-            ->enableCompilation(Env::getString(Env::DI_CMPL_DIR))
-            ->writeProxiesToFile(true, Env::getString(Env::DI_PRXY_DIR));
-    }
+    set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
+        // error was suppressed with the @-operator
+        if (0 === error_reporting()) {
+            return false;
+        }
 
-    $app = $containerBuilder
-        ->build()
-        ->get(BaseApp::class);
+        throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+    });
 
-    // This should never happen but... let's handle anyway
-    if (!$app instanceof BaseApp) {
-        throw new RuntimeException("\$app is not an instance of " . BaseApp::class);
+    try {
+        if (!ob_start()) {
+            throw new RuntimeException('Unable to start output buffer');
+        }
+
+        if (!is_string($baseDir)) {
+            throw new RuntimeException('Invalid base directory');
+        }
+
+        require $baseDir . '/vendor/autoload.php';
+
+        Env::load($baseDir, $baseURI);
+
+        $containerBuilder = (new DIContainerBuilder())
+            ->useAttributes(true)
+            ->addDefinitions(Env::getString(Env::DI_DEF_FILE));
+
+        if (Env::getBool(Env::DI_ENABLE_CMPL)) {
+            $containerBuilder = $containerBuilder
+                ->enableCompilation(Env::getString(Env::DI_CMPL_DIR))
+                ->writeProxiesToFile(true, Env::getString(Env::DI_PRXY_DIR));
+        }
+
+        $container = $containerBuilder->build();
+
+        $app = $container->get(BaseApp::class);
+        if (!$app instanceof BaseApp) {
+            throw new RuntimeException("\$app is not an instance of " . BaseApp::class);
+        }
+
+        $app->init();
+
+        while (ob_get_level() > 0) {
+            if (!ob_end_clean()) {
+                throw new RuntimeException('Unable to stop output buffer');
+            }
+        }
+    } catch (Throwable $t) {
+        $exception = $t;
+        exit;
     }
 
     $app->run();
-})();
-
-ob_end_flush();
+})($_ENV['BASE_DIR'] ?? null, $_SERVER['SCRIPT_NAME'] ?? '');
